@@ -1,0 +1,3 @@
+[submodule "my_apis"]
+	path = my_apis
+	url = https://github.com/MarianoAlcarazAguilar/my-apis
