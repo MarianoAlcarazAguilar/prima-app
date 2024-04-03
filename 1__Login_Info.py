@@ -43,7 +43,6 @@ def render_page():
         load_credentials()
     else:
         st.write('Your credentials are already loaded')
-        automations = st.session_state.automations
         if st.button('Logout'): 
             st.session_state.automations = None
             st.session_state.finder = None
