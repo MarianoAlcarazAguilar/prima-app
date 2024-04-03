@@ -1,0 +1,7 @@
+.login.json
+.mb_credentials.json
+.DS_Store
+__pycache__
+.ipynb_checkpoints
+./data/*.xlsx
+./data/*.csv
