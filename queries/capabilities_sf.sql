@@ -1,0 +1,3 @@
+select Id, main_process__c, other_processes__c, formation_processes__c, materials_processes__c, tooling_processes__c, logistics_processes__c, machining_processes__c, heavy_fab_processes__c, laboratory_processes__c, finishing_processes__c, joining_welding_processes__c, light_fab_processes__c
+from Account
+where main_process__c != null

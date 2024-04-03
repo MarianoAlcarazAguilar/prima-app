@@ -1,0 +1,2 @@
+select Id, Number_of_RFQs_MP_has_quoted__c, Completed_Work_Orders__c
+from Account
