@@ -37,11 +37,15 @@ def allow_filtering():
         options=products_options
     )
 
+    # Permitimos agregar opciones adicionales
     st.sidebar.text('Choose aditional options')
-    col_region, col_quotes, col_wos = st.sidebar.columns(3)
-    show_region_mps = col_region.checkbox('Region')
-    show_quotes = col_quotes.checkbox('Quotes')
-    show_wos = col_wos.checkbox('Wos')
+    col1, col2, col3 = st.sidebar.columns(3)
+    show_region_mps = col1.checkbox('Region')
+    show_quotes = col2.checkbox('Quotes')
+    show_wos = col3.checkbox('Wos')
+    show_status = col1.checkbox('Status')
+    show_type = col2.checkbox('Type')
+    show_score = col3.checkbox('Score')
 
     if len(chosen_products) == 0 : 
         st.text('Please choose products to continue')
@@ -52,7 +56,10 @@ def allow_filtering():
         chosen_state,
         show_region_mps=show_region_mps,
         show_quotes=show_quotes,
-        show_wos=show_wos
+        show_wos=show_wos,
+        show_status=show_status,
+        show_type=show_type,
+        show_score=show_score
     )
     
     if search_results.size <= 0:
