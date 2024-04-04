@@ -1,4 +1,12 @@
 # Notas
+
+## Creación de contenedor
+Para que funcione adecuadamente hay que ejecutarlo desde donde esté el archivo `Dockerfile` llamando al `create_docker_container.sh` de la siguiente forma:
+```sh
+./scripts/create_docker_container.sh
+```
+
+## Manejo de submódulos
 Este repostiorio necesita el submódulo de mis apis. Para ejecutarlo de manera adecuada es necesario seguir los siguientes pasos:
 
 1. En vez de clonar simplemente el repositorio, es necesario correr este comando para también traer el contenido de **my_apis**
