@@ -1,5 +1,6 @@
 import streamlit as st
 import openpyxl as xl
+from scripts.mps_finder import MPsFinder
 
 def open_styles(location='style.css'):
     
@@ -38,3 +39,19 @@ def user_is_verified() -> bool:
         st.error('Your credentials are not loaded yet')
         return False
     return True
+
+def load_finder() -> MPsFinder:
+    '''
+    Solo llamar esta función si automations ya está cargada en session_state
+    '''
+    automations = st.session_state.automations
+    if 'finder' not in st.session_state or st.session_state.finder is None:
+        finder = MPsFinder(
+            sfc=automations.get_salesforce_connection(), 
+            mbc=automations.get_metabase_connection(),
+            user=automations.get_user()
+        )
+        st.session_state.finder = finder
+        return finder
+    else:
+        return st.session_state.finder

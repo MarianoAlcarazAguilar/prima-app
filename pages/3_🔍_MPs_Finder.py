@@ -1,26 +1,14 @@
 import streamlit as st
 import pandas as pd
 from st_functions import *
-from scripts.mps_finder import MPsFinder
 
 def render_page():
     open_styles()
     if not user_is_verified(): return
     st.title('MPs Finder')
     add_description_to_page('Elige los <b>productos y estados</b> que buscas')
+    # Aquí sabemos ya que automations está cargado, por lo tanto, no se va a romper el finder
     allow_filtering()
-
-def load_finder() -> MPsFinder:
-    '''
-    Solo llamar esta función si automations ya está cargada en session_state
-    '''
-    automations = st.session_state.automations
-    if 'finder' not in st.session_state or st.session_state.finder is None:
-        finder = MPsFinder(automations.get_salesforce_connection(), automations.get_metabase_connection())
-        st.session_state.finder = finder
-        return finder
-    else:
-        return st.session_state.finder
 
 def allow_filtering():
     finder = load_finder()
@@ -51,7 +39,7 @@ def allow_filtering():
         st.text('Please choose products to continue')
         return
 
-    search_results = finder.filter_mps(
+    search_results = finder.filter_mps_raw_materials(
         chosen_products, 
         chosen_state,
         show_region_mps=show_region_mps,
@@ -88,6 +76,22 @@ def allow_filtering():
     )
 
     if len(chosen_mps) == 0: return
+
+    if not st.sidebar.button('🔍'): return
+
+    # Aquí guardamos la búsqueda
+    # Esto nos permitirá mejorar el modelo de matching eventualmente
+    finder.register_raw_materials_search(
+        products=chosen_products,
+        state=chosen_state,
+        chosen_mps=chosen_mps,
+        show_region_mps=show_region_mps,
+        show_quotes=show_quotes,
+        show_wos=show_wos,
+        show_status=show_status,
+        show_type=show_type,
+        show_score=show_score
+    )
 
     contact_info = finder.get_contact_info(
         mps=chosen_mps

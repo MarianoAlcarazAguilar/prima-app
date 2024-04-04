@@ -8,14 +8,88 @@ class MPsFinder:
     '''
     Esta clase tiene toda la funcionalidad necesaria para busar MPs con base en productos y estados seleccionados
     '''
-    def __init__(self, sfc:SalesforceConnection, mbc:MetabaseConnection) -> None:
+    def __init__(self, sfc:SalesforceConnection, mbc:MetabaseConnection, user:str) -> None:
+        self.__DATABASE_ID = 6
+        self.__RM_SEARCH_LOG_TEMPLATE = 'templates/rm_search_log_template.xlsx'
+        self.__RM_SEARCH_LOG = 'logs/rm_search_log.parquet'
+    
         self.__sfc = sfc
         self.__mbc = mbc
-        self.__DATABASE_ID = 6
+        self.__user = user
         self.__catalogue = self.__load_catalogue()
         self.__states = self.__load_states()
         self.__mps = self.__load_mps(interval_days=30)
         self.__mps_db = self.__load_mps_db()
+
+        self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
+
+    def __start_search_log(self, log_template:str, log_path:str) -> bool:
+        '''
+        Esta función inicia un nuevo search log. Literal lo único que hace es leer el template
+        de excel y lo pasa a un parquet
+
+        :param log_template: ubicación del archivo excel con el formato del log
+        :param log_path: dónde se quiere guardar el nuevo archivo
+
+        :return: booleano indicando si el archivo se creó (True) o si no se creó pues ya existía (False)
+
+        Eg. start_search_log('../templates/raw_materials_search_log.xlsx', '../rm_search_log.parquet')
+        '''
+        search_log_extension = log_path.split('.')[-1]
+        template_extension = log_template.split('.')[-1]
+        
+        if search_log_extension != 'parquet':
+            raise Exception('Search log file must be parquet type')
+
+        # Revisamos que el search log no exista, porque sino lo sobreescribiríamos
+        if os.path.exists(log_path): 
+            return False
+            
+        if template_extension == 'xlsx':
+            template = pd.read_excel(log_template)
+        elif template_extension == 'csv':
+            template = pd.read_csv(log_template)
+        else:
+            raise Exception(f'Unsupported format for template: {template_extension}')
+
+        template.to_parquet(log_path, index=False)
+        return True
+    
+    def __add_search_log_entry(self, search_log_path:str, entry_dict:dict) -> None:
+        '''
+        Esta función se encarga de registrar una búsqueda en el log de búsquedas.
+        La ventaja es que funciona para cualquier tipo de log, sin importar si las columnas son diferentes.
+        Esto es útil si las búsquedas tienen diferentes parámetros que se quieren guardar.
+
+        :param search_log_path: ubicación del archivo parquet del log que se está usando
+        :param entry_dict: diccionario con los datos de la nueva entrada. Se verifica que las columnas coincidan
+        '''
+        # Convertimos el diccionario a dataframe
+        search_log_extension = search_log_path.split('.')[-1]
+        
+        if search_log_extension != 'parquet':
+            raise Exception(f'Unsupported format for search log: {search_log_extension}')
+
+        try:
+            search_log = pd.read_parquet(search_log_path)
+        except FileNotFoundError:
+            self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
+            search_log = pd.read_parquet(search_log_path)
+        new_entry = pd.DataFrame({key: [value] for key, value in entry_dict.items()})
+        
+        # Verificamos que las columnas coincidan con las del search log
+        cols_are_equal = set(search_log.columns) == set(new_entry.columns)
+        
+        if not cols_are_equal: 
+            missing_cols = set(search_log.columns) - set(new_entry.columns)
+            raise Exception(f'Missing columns in new entry: {missing_cols}')
+            
+        # Juntamos los dataframes y los guardamos
+        # Nos aseguramos de que no esté vacío el log actual, porque sino es mamona la chingadera esta
+        if search_log.size > 0:
+            pd.concat((search_log, new_entry), ignore_index=True).to_parquet(search_log_path, index=False)
+        else:
+            new_entry.to_parquet(search_log_path, index=False)
 
     def get_product_catalgue(self) -> pd.DataFrame:
         return self.__catalogue
@@ -199,7 +273,7 @@ class MPsFinder:
 
         return db
 
-    def filter_mps(self, products:list, state:str, show_region_mps:bool, show_quotes:bool, show_wos:bool, show_status:bool, show_type:bool, show_score:bool) -> pd.DataFrame:
+    def filter_mps_raw_materials(self, products:list, state:str, show_region_mps:bool, show_quotes:bool, show_wos:bool, show_status:bool, show_type:bool, show_score:bool) -> pd.DataFrame:
         '''
         Esta función busca los mps que hagan match con los filtros especificados.
 
@@ -249,6 +323,27 @@ class MPsFinder:
                 .rename({'state':state_region}, axis=1)
             )
         return search_result.drop(['total_products'], axis=1)
+    
+    def register_raw_materials_search(self, products:list, state:str, chosen_mps:list, show_region_mps:bool, show_quotes:bool, show_wos:bool, show_status:bool, show_type:bool, show_score:bool) -> None:
+        '''
+        Esta función se encarga de registrar las búsquedas que los usuarios hagan de raw_materials. 
+        Queremos tener control de qué MPs buscan y cuándo.
+        '''
+        entry_dict = {
+            'user':self.__user,
+            'date':datetime.now(),
+            'state':state,
+            'products':products,
+            'mps':chosen_mps,
+            'region':show_region_mps,
+            'quotes':show_quotes,
+            'wos':show_wos,
+            'status':show_status,
+            'type':show_type,
+            'score':show_score
+        }
+
+        self.__add_search_log_entry(search_log_path=self.__RM_SEARCH_LOG, entry_dict=entry_dict)
     
     def get_contact_info(self, mps:list) -> pd.DataFrame:
         '''

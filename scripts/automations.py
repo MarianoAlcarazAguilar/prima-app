@@ -19,7 +19,11 @@ class Automations:
 
         self.__mbc = MetabaseConnection(mb_credentials, new_login=new_login, login_is_path=logins_are_paths)
         self.__sfc = SalesforceConnection(sf_credentials, login_is_path=logins_are_paths)
+        self.__user = mb_credentials['username']
         self.__DATABASE_ID = 6
+
+    def get_user(self) -> str:
+        return self.__user
 
     def set_database_id(self, database_id:int) -> None:
         '''

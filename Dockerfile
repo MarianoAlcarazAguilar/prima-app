@@ -11,6 +11,8 @@ COPY my_apis/ /app/my_apis/
 COPY pages/ /app/pages/
 COPY queries/ /app/queries/
 COPY scripts/ /app/scripts/
+COPY templates/ /app/templates/
+COPY logs/ /app/logs/
 COPY 1__Login_Info.py /app/
 COPY requirements.txt /app/
 COPY st_functions.py /app/
