@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from st_functions import *
+from scripts.st_functions import *
 
 def render_page():
     open_styles()

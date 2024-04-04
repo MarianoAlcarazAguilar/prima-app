@@ -2,7 +2,7 @@ import streamlit as st
 import openpyxl as xl
 from scripts.mps_finder import MPsFinder
 
-def open_styles(location='style.css'):
+def open_styles(location='templates/style.css'):
     
     st.set_page_config(
         layout='wide', 

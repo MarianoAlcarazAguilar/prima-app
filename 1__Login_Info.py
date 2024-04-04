@@ -1,5 +1,5 @@
 import json
-from st_functions import *
+from scripts.st_functions import *
 import streamlit as st
 from scripts.automations import Automations
 

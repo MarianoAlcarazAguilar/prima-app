@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from st_functions import *
+from scripts.st_functions import *
 
 def show_errors(errors:list):
     if len(errors) == 0: return

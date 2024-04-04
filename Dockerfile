@@ -15,8 +15,6 @@ COPY templates/ /app/templates/
 COPY logs/ /app/logs/
 COPY 1__Login_Info.py /app/
 COPY requirements.txt /app/
-COPY st_functions.py /app/
-COPY style.css /app/
 
 # Montamos todo para que pueda ejecutarse la aplicación
 # Yo no lo voy a hacer dentro de un ambiente virtual.
