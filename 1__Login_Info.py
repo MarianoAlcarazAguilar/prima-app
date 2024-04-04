@@ -1,7 +1,7 @@
 import json
 from st_functions import *
 import streamlit as st
-from my_apis.automations import Automations
+from scripts.automations import Automations
 
 def load_credentials() -> Automations:
     '''

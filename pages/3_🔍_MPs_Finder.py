@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from st_functions import *
-from my_apis.mps_finder import MPsFinder
+from scripts.mps_finder import MPsFinder
 
 def render_page():
     open_styles()

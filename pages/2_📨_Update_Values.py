@@ -52,7 +52,7 @@ def update_scorecards():
                     errors = automations.update_scorecards(
                         file=file,
                         sheet_name=sheet_name,
-                        verbose=True
+                        verbose=False
                     )
                     st.success('Scorecard values have been updated')
                     show_errors(errors)
@@ -65,7 +65,7 @@ def update_otif():
     sf_query = 'queries/otif_sf.sql'
     mb_is_path = True
     sf_is_path = True
-    verbose = True
+    verbose = False
 
     if st.button('Update OTIF'):
         errors = automations.update_otif(
