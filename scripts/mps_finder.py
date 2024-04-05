@@ -20,6 +20,8 @@ class MPsFinder:
         self.__states = self.__load_states()
         self.__mps = self.__load_mps(interval_days=30)
         self.__mps_db = self.__load_mps_db()
+        # Voy a guardar este para usarlo de referencia
+        self.__mps_db.to_parquet('auxiliar_db.parquet', index=False)
 
         self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
 
