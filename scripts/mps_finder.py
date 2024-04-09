@@ -387,6 +387,7 @@ class MPsFinder:
                 is_path=True,
                 rename_output={'States__c':'state', 'state_code__c':'state_code', 'Region__c':'region'}
             )
+            .replace({'Ciudad de México':'Mexico City'})
         )
         return state_codes 
     

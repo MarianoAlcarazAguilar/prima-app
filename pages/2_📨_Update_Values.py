@@ -13,6 +13,12 @@ def show_errors(errors:list):
 def render_page():
     open_styles()
     if not user_is_verified(): return
+    automations = st.session_state.automations
+    if automations.get_user() != "mariano.alcaraz@prima.ai":
+        st.warning('Sorry, you are not authorized to view this page')
+        return
+    else:
+        st.title('Hello Mariano')
     
     add_description_to_page('Elige el tipo de valor que deseas actualizar.')
     choice = st.sidebar.radio('Update', options=['WOs & Quotes', 'MP Status', 'Main Process', 'OTIF', 'Scorecards'])

@@ -12,7 +12,7 @@ def render_page():
 def allow_filtering():
     finder = load_finder()
     available_processes, available_show_columns, available_main_processes = finder.get_picklists_lists()
-    state_options = finder.get_states().state.sort_values().to_list()
+    state_options = finder.get_states().drop_duplicates(subset=['state']).state.sort_values().to_list()
 
     chosen_processes = st.sidebar.multiselect(
         label='Choose processes',

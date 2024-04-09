@@ -13,7 +13,7 @@ def render_page():
 def allow_filtering():
     finder = load_finder()
     products_options = finder.get_product_catalgue().product_name.sort_values().to_list()
-    state_options = finder.get_states().state.sort_values().to_list()
+    state_options = finder.get_states().drop_duplicates(subset=['state']).state.sort_values().to_list()
 
     chosen_state = st.sidebar.selectbox(
         label='Choose state',
