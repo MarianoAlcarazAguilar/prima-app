@@ -18,13 +18,156 @@ class MPsFinder:
         self.__user = user
         self.__catalogue = self.__load_catalogue()
         self.__states = self.__load_states()
-        self.__mps = self.__load_mps(interval_days=30)
-        self.__mps_db = self.__load_mps_db()
-        # Voy a guardar este para usarlo de referencia
-        self.__mps_db.to_parquet('auxiliar_db.parquet', index=False)
+        self.__addresses = self.__load_addresses()
+        self.__mps = self.__load_mps()
+        self.__rm_mps = self.__load_rm_mps(interval_days=30)
+        self.__rm_mps_db = self.__load_rm_mps_db()
 
         self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
 
+    def __load_addresses(self) -> pd.DataFrame:
+        '''
+        Esta función carga las direcciones de los MPs
+        '''
+        direcciones = self.__execute_query_in_sf(
+            query='queries/addresses.sql',
+            is_path=True,
+            rename_output={'Account__c':'mp_id', 'location__StateCode__s':'state_code'}
+        )
+        return direcciones
+        
+    def __load_mps(self) -> pd.DataFrame:
+        '''
+        Esta función carga los MPs de manufactura para poder filtrarlos como se desee.
+        '''
+        rename_dict = {
+            'Account_Status__c':'status',
+            'Completed_Work_Orders__c':'wos',
+            'Number_of_RFQs_MP_has_quoted__c':'quotes', 
+            'NDA_status__c':'nda',
+            'truora_test__c':'truora',
+            'syntage_test__c':'syntage',
+            'Id':'mp_id'
+        }
+
+        mps = self.__execute_query_in_sf(
+            query='queries/mps_manufacturing.sql',
+            is_path=True,
+            rename_output=rename_dict
+        )
+
+        capabilities = (
+            mps
+            .rename(lambda x: x.replace('_capability__c', ''), axis=1)
+            .rename(lambda x: x.replace('__c', ''), axis=1)
+            .merge(self.__addresses, on='mp_id', how='inner')
+            .merge(self.__states, on='state_code')
+            .query('main_process != "Material Sourcing"') # Quitamos a los MPs de raw materials
+        )
+        return capabilities
+    
+    def get_picklists_lists(self) -> tuple:
+        '''
+        Esta función regresa las opciones disponibles de filtrado y de display para las columnas que se usan en los MPs de manufactura.
+        También regresa los main processes disponibles.
+
+        :return: (list of filter columns, list of display columns, list of main processes)
+        '''
+        main_processes = self.__mps.main_process.dropna().unique().tolist()
+        
+        filter_columns = [
+            'machining',
+            'logistics',
+            'formation',
+            'tooling',
+            'heavy_fab',
+            'laboratory',
+            'finishing',
+            'joining_welding',
+            'light_fab',
+            'other'
+        ]
+
+        display_columns = [
+            'main_process',
+            'status',
+            'wos',
+            'quotes',
+            'nda',
+            'truora',
+            'syntage',
+            'last_wo_date',
+            'global_score'
+        ]
+        return filter_columns, display_columns, main_processes
+    
+    def filter_mps_manufacturing(self, chosen_processes:list, chosen_state:str, show_columns:list, only_active:bool, only_developing:bool, search_region:bool, main_process:str) -> pd.DataFrame:
+        '''
+        Esta función busca a los MPs que hagan match con los filtros que se quieran aplicar.
+        '''
+        mps_db = self.__mps
+        # 1. Encontramos las columnas por las cuales vamos a ordenar
+        sort_columns = ['total_processes']
+        available_sort_columns = ['wos', 'quotes', 'global_score'] # Estas son las que están disponibles para ordenar dentro de las opciones
+        sort_columns.extend(list(set(available_sort_columns).intersection(set(show_columns))))
+        show_columns.append('Name')
+
+
+        # 2. Filtramos ubicaciones dependiendo de lo que quieran
+        if search_region:
+            chosen_region = self.__states.query('state == @chosen_state').region.values[0]
+            location_filter = mps_db.query('region == @chosen_region')
+            show_columns.append('state')
+        else: 
+            location_filter = mps_db.query('state == @chosen_state')
+
+
+        # 3. Filtramos el status deseado (o ninguno)
+        if only_active and only_developing: 
+            status_filter = location_filter.query('wos > 0 or quotes > 0')
+        elif only_active: 
+            status_filter = location_filter.query('wos > 0')
+        elif only_developing: 
+            status_filter = location_filter.query('status == "Developing MP (Quoted)"')
+        else: 
+            status_filter = location_filter
+
+
+        # 4. Filtramos solo aquellos del main process deseado
+        process_name_match = {
+            'machining':'Machining',
+            'logistics':'Logistics',
+            'formation':'Metal Formation',
+            'tooling':'Other', #   WARNING : FALTA DEFINIR EL MAIN PROCESS DE TOOLING
+            'heavy_fab':'Heavy Fab',
+            'laboratory':'Laboratory',
+            'finishing':'Finishing',
+            'joining_welding':'Joining and Welding',
+            'light_fab':'Light Fabrication',
+            'other':'Other'
+        }
+        process_filter = status_filter
+        if main_process is not None: 
+            main_process = process_name_match[main_process]
+            process_filter = status_filter.query('main_process == @main_process')
+
+
+        filtered_values = (
+            process_filter
+            .query(' or '.join(chosen_processes)) # filtramos los procesos que se quiere
+            .drop_duplicates(subset=['Name'])
+            .set_index(show_columns)
+            [chosen_processes]
+            .astype(int)
+            .assign(total_processes=lambda x: x.sum(axis=1))
+            .sort_values(sort_columns, ascending=False)
+            .drop(['total_processes'], axis=1)
+            .astype(bool)
+            .reset_index()
+            .set_index('Name')
+        )
+        return filtered_values
+        
     def __start_search_log(self, log_template:str, log_path:str) -> bool:
         '''
         Esta función inicia un nuevo search log. Literal lo único que hace es leer el template
@@ -97,13 +240,13 @@ class MPsFinder:
         return self.__catalogue
     
     def get_mps_db(self) -> pd.DataFrame:
-        return self.__mps_db
+        return self.__rm_mps_db
     
     def get_states(self) -> pd.DataFrame:
         return self.__states
     
     def get_mps(self) -> pd.DataFrame:
-        return self.__mps
+        return self.__rm_mps
 
     def __execute_query_in_sf(self, query:str, is_path:bool=False, rename_output:dir={}) -> pd.DataFrame:
         '''
@@ -163,7 +306,7 @@ class MPsFinder:
         )
         return catalogue
     
-    def __load_mps(self, interval_days:int=30) -> pd.DataFrame:
+    def __load_rm_mps(self, interval_days:int=30) -> pd.DataFrame:
         '''
         Esta función carga la lista de MPs y sus nombres.
 
@@ -247,7 +390,7 @@ class MPsFinder:
         )
         return state_codes 
     
-    def __load_mps_db(self) -> pd.DataFrame:
+    def __load_rm_mps_db(self) -> pd.DataFrame:
         '''
         Esta función se encarga de crear un dataframe con los MPs, sus respectivas ubicaciones y productos
 
@@ -259,15 +402,11 @@ class MPsFinder:
             rename_output={'product__c':'product_id', 'account__c':'mp_id'}
         )
 
-        direcciones = self.__execute_query_in_sf(
-            query='queries/addresses.sql',
-            is_path=True,
-            rename_output={'Account__c':'mp_id', 'location__StateCode__s':'state_code'}
-        )
+        direcciones = self.__addresses
 
         db = (
             direcciones
-            .merge(self.__mps, on='mp_id', how='left')
+            .merge(self.__rm_mps, on='mp_id', how='left')
             .merge(self.__states, on='state_code')
             .merge(existing_products, on='mp_id')
             .merge(self.__catalogue, on='product_id')
@@ -294,7 +433,7 @@ class MPsFinder:
         if not show_region_mps:
             search_result = (
                 self
-                .__mps_db
+                .__rm_mps_db
                 .query('product_name in @products')
                 .query('state == @state')
                 .drop_duplicates(subset=['mp_id', 'product_id'])
@@ -311,7 +450,7 @@ class MPsFinder:
             pivot_index.append('state')
             search_result = (
                 self
-                .__mps_db
+                .__rm_mps_db
                 .query('product_name in @products')
                 .query('region == @state_region')
                 .drop_duplicates(subset=['mp_id', 'product_id'])
@@ -353,9 +492,9 @@ class MPsFinder:
 
         :param mps: lista con los nombres de los MPs que se buscan
 
-        :return: pd.DataFrame con los contactos
+        :return: pd.DataFrame con los contactos, regresa None si no hay contactos relacionados
         '''
-        chosen_mps_ids = self.__mps.query('mp_name in @mps').mp_id.values.tolist()
+        chosen_mps_ids = self.__rm_mps.query('mp_name in @mps').mp_id.values.tolist()
         if len(chosen_mps_ids) == 0: return None
 
         query = f'''
@@ -364,12 +503,15 @@ class MPsFinder:
         where {' or '.join([f"AccountId = '{mp_id}'" for mp_id in chosen_mps_ids])}
         '''
 
+        try:
+            aux_contacts = self.__execute_query_in_sf(query)
+        except KeyError:
+            return None
         mps_contacts = (
-            self
-            .__execute_query_in_sf(query)
+            aux_contacts
             .dropna(subset=['Phone', 'MobilePhone', 'Email', 'Title'], how='all')
             .rename({'AccountId':'mp_id'}, axis=1)
-            .merge(self.__mps[['mp_id', 'mp_name']], on='mp_id')
+            .merge(self.__rm_mps[['mp_id', 'mp_name']], on='mp_id')
             .set_index('mp_name')
             .drop(['mp_id'], axis=1)
             .dropna(axis=1, how='all')

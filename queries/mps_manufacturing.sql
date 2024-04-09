@@ -1,0 +1,2 @@
+select Id, Name, Account_Status__c, Completed_Work_Orders__c, Number_of_RFQs_MP_has_quoted__c, NDA_status__c, truora_test__c, syntage_test__c, last_wo_date__c, global_score__c, main_process__c, machining_capability__c, logistics_capability__c, formation_capability__c, tooling_capability__c, heavy_fab_capability__c, laboratory_capability__c, finishing_capability__c, joining_welding_capability__c, light_fab_capability__c, other_capability__c
+from Account 

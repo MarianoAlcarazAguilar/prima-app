@@ -5,7 +5,7 @@ from scripts.st_functions import *
 def render_page():
     open_styles()
     if not user_is_verified(): return
-    st.title('MPs Finder')
+    st.title('Raw Materials Hub')
     add_description_to_page('Elige los <b>productos y estados</b> que buscas')
     # Aquí sabemos ya que automations está cargado, por lo tanto, no se va a romper el finder
     allow_filtering()
