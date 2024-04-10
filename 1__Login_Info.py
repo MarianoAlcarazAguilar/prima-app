@@ -13,7 +13,7 @@ def load_credentials() -> Automations:
         col1, col2 = st.columns(2)
 
         col1.markdown('''
-        <a href='https://www.google.com'>How to get my metabase credentials?</a>
+        <a href='https://www.loom.com/share/ffe2ad426dc44c9cb3696efba36294d4?sid=393dec18-7f69-425c-9bbf-97952a27642e'>How to get my metabase credentials?</a>
         ''', unsafe_allow_html=True)
 
         with open('templates/mb_credentials.json', 'r') as f:
@@ -30,7 +30,7 @@ def load_credentials() -> Automations:
 
         col1, col2 = st.columns(2)
         col1.markdown('''
-        <a href='https://www.google.com'>How to get my salesforce credentials?</a>
+        <a href='https://www.loom.com/share/79d9e76b08d74dc4be67f6529a03cc62?sid=e5b1d3bd-c8cb-4de0-915e-da2f4ace5604'>How to get my salesforce credentials?</a>
         ''', unsafe_allow_html=True) 
 
         with open('templates/sf_credentials.json', 'r') as f:
@@ -65,7 +65,6 @@ def load_credentials() -> Automations:
         if new_login: st.json({'current-token':automations.get_mb_token()}, expanded=False)
         st.success('Your credentials were loaded')
         st.session_state.automations = automations
-        st.rerun()
     
 
 def render_page():
