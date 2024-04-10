@@ -9,6 +9,40 @@ def load_credentials() -> Automations:
 
     :return: loaded Automations object
     '''
+    with st.sidebar.expander('ℹ Help'):
+        col1, col2 = st.columns(2)
+
+        col1.markdown('''
+        <a href='https://www.google.com'>How to get my metabase credentials?</a>
+        ''', unsafe_allow_html=True)
+
+        with open('templates/mb_credentials.json', 'r') as f:
+            json_string = json.dumps(json.load(f))
+
+        col2.download_button(
+            label='📥 Metabase template',
+            file_name='mb_credentials.json',
+            mime='application/json',
+            data=json_string
+        )
+
+        st.markdown('<hr>', unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        col1.markdown('''
+        <a href='https://www.google.com'>How to get my salesforce credentials?</a>
+        ''', unsafe_allow_html=True) 
+
+        with open('templates/sf_credentials.json', 'r') as f:
+            json_string = json.dumps(json.load(f))
+
+        col2.download_button(
+            label='📥 Salesforce template',
+            file_name='sf_credentials.json',
+            mime='application/json',
+            data=json_string
+        )
+
     mb_col, st_col = st.columns(2)
     # Recibimos los json files con las credenciales
     with mb_col:
