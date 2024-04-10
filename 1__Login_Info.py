@@ -65,19 +65,22 @@ def load_credentials() -> Automations:
         if new_login: st.json({'current-token':automations.get_mb_token()}, expanded=False)
         st.success('Your credentials were loaded')
         st.session_state.automations = automations
+        st.rerun()
     
 
 def render_page():
     open_styles()
-    add_description_to_page('Carga las credenciales correspondientes.')
-    st.title('Upload your credentials')
+    
+    
 
     # Handle session state
     if ('automations' in st.session_state and st.session_state.automations is None) or 'automations' not in st.session_state:
+        add_description_to_page('Carga las credenciales correspondientes.')
+        st.title('Upload your credentials')
         load_credentials()
     else:
-        st.write('Your credentials are already loaded')
-        if st.button('Logout'): 
+        st.title('Your credentials have been loaded')
+        if st.sidebar.button('Logout'): 
             st.session_state.automations = None
             st.session_state.finder = None
             st.rerun()
