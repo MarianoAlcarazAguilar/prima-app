@@ -77,7 +77,8 @@ def load_default_credentials():
         if username.endswith("@prima.ai"):
             automations = Automations(
                 mb_credentials='templates/default_mb_credentials.json',
-                sf_credentials='templates/default_sf_credentials.json'
+                sf_credentials='templates/default_sf_credentials.json',
+                user=username
             )
             st.session_state.automations = automations
 
