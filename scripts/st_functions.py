@@ -49,7 +49,7 @@ def load_finder() -> MPsFinder:
         finder = MPsFinder(
             sfc=automations.get_salesforce_connection(), 
             mbc=automations.get_metabase_connection(),
-            user=automations.get_user()
+            user='default-user'
         )
         st.session_state.finder = finder
         return finder

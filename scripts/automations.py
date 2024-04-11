@@ -8,7 +8,7 @@ from my_apis.mb_connection import MetabaseConnection
 from my_apis.sf_connection import SalesforceConnection
 
 class Automations:
-    def __init__(self, mb_credentials:str, sf_credentials:str=None, new_login:bool=False, logins_are_paths:bool=True, sf_login:bool=False) -> None:
+    def __init__(self, mb_credentials:str, sf_credentials:str=None, new_login:bool=False, user:str=None) -> None:
         '''
         :param mb_credentials: path to json file with username, password y current-token.
         :param sf_credentials: path to json file with security_token, username, password, domain.
@@ -18,12 +18,18 @@ class Automations:
         '''
         warnings.filterwarnings('error') # Para poder cachar warnings como exceptions.
 
-        self.__mbc = MetabaseConnection(mb_credentials, new_login=new_login, login_is_path=logins_are_paths)
-        self.__sfc = SalesforceConnection(login_info_path=sf_credentials, login_is_path=logins_are_paths, default_login=not sf_login)
-        self.__user = mb_credentials['username']
+        self.__mbc = MetabaseConnection(mb_credentials, new_login=new_login)
+        self.__sfc = SalesforceConnection(sf_credentials)
+        try:
+            self.__user = mb_credentials["username"]
+        except:
+            self.__user = user if user is not None else 'default-user'
         self.__DATABASE_ID = 6
 
     def get_user(self) -> str:
+        '''
+        Esta función regresa al usuario activo
+        '''
         return self.__user
 
     def set_database_id(self, database_id:int) -> None:
