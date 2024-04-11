@@ -64,7 +64,6 @@ def load_full_credentials():
         if new_login: st.json({'current-token':automations.get_mb_token()}, expanded=False)
         st.success('Your credentials were loaded')
         st.session_state.automations = automations
-        st.session_state.full_login = True
         
 
 def load_default_credentials():
@@ -81,17 +80,16 @@ def load_default_credentials():
                 sf_credentials='templates/default_sf_credentials.json'
             )
             st.session_state.automations = automations
-            st.session_state.full_login = False
 
 def render_page():
     open_styles()
     full_login = st.sidebar.toggle('Full login')
+    st.session_state.full_login = full_login
 
     # Handle session state
     if ('automations' in st.session_state and st.session_state.automations is None) or 'automations' not in st.session_state:
         add_description_to_page('Carga las credenciales correspondientes.')
         if full_login:
-            
             load_full_credentials()
         else:
             load_default_credentials()

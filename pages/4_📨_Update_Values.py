@@ -12,11 +12,12 @@ def show_errors(errors:list):
 
 def render_page():
     open_styles()
+    if not user_is_verified(): 
+        return
     if not st.session_state.full_login:
         st.info("Access with full credentials to see this page")
         return
-    if not user_is_verified(): 
-        return
+    
     automations = st.session_state.automations
     if automations.get_user() != "mariano.alcaraz@prima.ai":
         st.warning('Sorry, you are not authorized to view this page')
