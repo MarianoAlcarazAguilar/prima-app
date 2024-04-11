@@ -8,17 +8,18 @@ from my_apis.mb_connection import MetabaseConnection
 from my_apis.sf_connection import SalesforceConnection
 
 class Automations:
-    def __init__(self, mb_credentials:str, sf_credentials:str, new_login:bool=False, logins_are_paths:bool=True) -> None:
+    def __init__(self, mb_credentials:str, sf_credentials:str=None, new_login:bool=False, logins_are_paths:bool=True, sf_login:bool=False) -> None:
         '''
         :param mb_credentials: path to json file with username, password y current-token.
         :param sf_credentials: path to json file with security_token, username, password, domain.
         :param new_login: wether or not to make a new login in metabase. Token lasts 14 days.
         :param logins_are_paths: wether or not the credentials are paths to files or are jsons alredy. Useful when using streamlit application
+        :param sf_login: wether or not to log in with given credentials, otherwise, default values are used
         '''
         warnings.filterwarnings('error') # Para poder cachar warnings como exceptions.
 
         self.__mbc = MetabaseConnection(mb_credentials, new_login=new_login, login_is_path=logins_are_paths)
-        self.__sfc = SalesforceConnection(sf_credentials, login_is_path=logins_are_paths)
+        self.__sfc = SalesforceConnection(login_info_path=sf_credentials, login_is_path=logins_are_paths, default_login=not sf_login)
         self.__user = mb_credentials['username']
         self.__DATABASE_ID = 6
 
