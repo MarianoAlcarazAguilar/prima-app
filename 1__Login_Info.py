@@ -73,14 +73,14 @@ def load_default_credentials():
     st.title('Enter your email')
     username = st.text_input(label='mail', label_visibility='collapsed')
     
-    if st.button("Login"):
-        if username.endswith("@prima.ai"):
-            automations = Automations(
-                mb_credentials='templates/default_mb_credentials.json',
-                sf_credentials='templates/default_sf_credentials.json',
-                user=username
-            )
-            st.session_state.automations = automations
+    if st.button('Login') and username.endswith('@prima.ai'):
+        automations = Automations(
+            mb_credentials='templates/default_mb_credentials.json',
+            sf_credentials='templates/default_sf_credentials.json',
+            user=username
+        )
+        st.session_state.automations = automations
+        st.rerun()
 
 def render_page():
     open_styles()
