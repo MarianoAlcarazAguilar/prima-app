@@ -5,7 +5,7 @@ import pandas as pd
 from streamlit import markdown
 from my_apis.excel_functions import DataExtraction
 from my_apis.mb_connection import MetabaseConnection
-from my_apis.sf_connection import SalesforceConnection
+from my_apis.sf_connection import SalesforceConnection, SalesforceFunctions
 
 class Automations:
     def __init__(self, mb_credentials:str, sf_credentials:str=None, new_login:bool=False, user:str=None) -> None:
@@ -20,6 +20,7 @@ class Automations:
 
         self.__mbc = MetabaseConnection(mb_credentials, new_login=new_login)
         self.__sfc = SalesforceConnection(sf_credentials)
+        self.__sff = SalesforceFunctions(self.__sfc)
         try:
             self.__user = mb_credentials["username"]
         except:
@@ -475,6 +476,45 @@ class Automations:
             .pipe(lambda df: self.__change_values(df, otif_sf, verbose=verbose, print_every=(df.size//10)+1))
         )
         return errors
+    
+    def update_last_wo_date(self, mb_query:str, sf_query:str, mb_is_path:bool, sf_is_path:bool, verbose:bool=False, id_col:str='sf_id') -> list:
+        '''
+        Esta función actualiza automáticamente en salesforce la última fecha que los MPs trabajaron con nosotros.
+
+        :param mb_query: el query que se ejecutará para sacar la última fecha de los wos. Expected output tras ejecutar query: dataframe con account id como index, last_wo_date column
+        :param sf_query: el query que se ejecutará en sf para sacar la última fecha de los wos que ya tienen registrados los MPs. Expected output tras ejecutar query: dataframe con account id como index y last_wo_date__c column
+        :param *_is_path: si el correspondiente query es un path o el query en string
+        :param verbose: wether to print or not
+        :param id_col: el nombre de la columna del índice único para ejecutar el query en metabase en caso de ser más de 2000 registros
+
+        :return: lista con los errores encontrados en la ejecución
+        '''
+        mb_data = (
+            self
+            .__execute_query_in_mb(mb_query, sf_is_path, id_col)
+            .set_index(id_col)
+        )
+
+        sf_data = (
+            self
+            .__execute_query_in_sf(sf_query, sf_is_path)
+            .set_index('Id')
+        )
+
+        errors = (
+            mb_data
+            .join(sf_data, how='left')
+            # Casteamos a fechas
+            .assign(
+                aux_date=lambda x: pd.to_datetime(x.date_last_wo, utc=True),
+                date_last_wo=lambda x: x.aux_date.dt.strftime('%Y-%m-%d')
+            )
+            .query('date_last_wo != last_wo_date__c')
+            [['date_last_wo']]
+            .pipe(lambda df: self.__sff.change_values(df, 'last_wo_date__c', verbose, print_every=10))
+        )
+        
+        return errors
 
     def __execute_query_in_mb(self, query:str, is_path:bool=False, id_col:str=None) -> pd.DataFrame:
         '''
@@ -484,6 +524,9 @@ class Automations:
         :param is_path: wether or not to load the query from the specified file 
         :param id_col: id_col es necesario cuando se extraen más de 2,000 registros de MB porque es por el que se ordenan para poder sacarlos todos.
         '''
+        # TODO: esta función puede hacerse más sencilla. En vez de preguntar si es path o no, simplemente se puede intentar leer
+        # y si no funciona o hay alguna exepción, entonces se supone que NO es path
+
         if is_path:
             with open(query, 'r') as f:
                 query = f.read()

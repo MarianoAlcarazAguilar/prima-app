@@ -26,7 +26,7 @@ def render_page():
         st.title('Hello Mariano')
     
     add_description_to_page('Elige el tipo de valor que deseas actualizar.')
-    choice = st.sidebar.radio('Update', options=['WOs & Quotes', 'MP Status', 'Main Process', 'OTIF', 'Scorecards'])
+    choice = st.sidebar.radio('Update', options=['WOs & Quotes', 'MP Status', 'Main Process', 'OTIF', 'Scorecards', 'Last WOs Date'], label_visibility='collapsed')
 
     if choice == 'WOs & Quotes':
         update_wos_quotes()
@@ -38,6 +38,8 @@ def render_page():
         update_otif()
     elif choice == 'Scorecards':
         update_scorecards()
+    elif choice == 'Last WOs Date':
+        update_last_wo_date()
 
 def update_scorecards():
     automations = st.session_state.automations
@@ -141,8 +143,23 @@ def update_wos_quotes():
         )
         st.success('WOs and Quotes have been updated')
         show_errors(errors=errors)
-        
-    
 
+def update_last_wo_date():
+    automations = st.session_state.automations
+
+    mb_query = 'queries/last_wo_date_mb.sql'
+    sf_query = 'queries/last_wo_date_sf.sql'
+
+    if st.button('Update last wo dates'):
+        errors = automations.update_last_wo_date(
+            mb_query=mb_query,
+            sf_query=sf_query,
+            mb_is_path=True,
+            sf_is_path=True,
+            verbose=True
+        )
+        st.success('Last wo dates have been updated')
+        show_errors(errors=errors)
+    
 if __name__ == '__main__':
     render_page()
