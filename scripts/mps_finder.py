@@ -11,7 +11,12 @@ class MPsFinder:
     def __init__(self, sfc:SalesforceConnection, mbc:MetabaseConnection, user:str) -> None:
         self.__DATABASE_ID = 6
         self.__RM_SEARCH_LOG_TEMPLATE = 'templates/rm_search_log_template.xlsx'
+        self.__LOGIN_LOG_TEMPLATE = 'templates/login_log_template.xlsx'
+        self.__MPS_SEARCH_LOG_TEMPLATE = 'templates/mps_search_log_template.xlsx'
+
         self.__RM_SEARCH_LOG = 'logs/rm_search_log.parquet'
+        self.__MPS_SEARCH_LOG = 'logs/mps_search_log.parquet'
+        self.__LOGIN_LOG = 'logs/login_log.parquet'
     
         self.__sfc = sfc
         self.__mbc = mbc
@@ -24,6 +29,10 @@ class MPsFinder:
         self.__rm_mps_db = self.__load_rm_mps_db()
 
         self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
+        self.__start_search_log(self.__LOGIN_LOG_TEMPLATE, self.__LOGIN_LOG)
+        self.__start_search_log(self.__MPS_SEARCH_LOG_TEMPLATE, self.__MPS_SEARCH_LOG)
+
+        self.__register_login()
 
     def __load_addresses(self) -> pd.DataFrame:
         '''
@@ -486,6 +495,36 @@ class MPsFinder:
         }
 
         self.__add_search_log_entry(search_log_path=self.__RM_SEARCH_LOG, entry_dict=entry_dict)
+
+    def register_mps_search(self, processes:list, state:str, display_columns:list, show_active:bool, show_developing:bool, search_region:bool, main_process, chosen_mps:list):
+        '''
+        Esta función se encarga de registrar las búsquedas de MPs de manufactura
+        '''
+        entry_dict = {
+            'user':self.__user,
+            'date':datetime.now(),
+            'processes':processes,
+            'state':state,
+            'display_columns':display_columns,
+            'active':show_active,
+            'developing':show_developing,
+            'region':search_region,
+            'main_process':main_process,
+            'chosen_mps':chosen_mps
+        }
+
+        self.__add_search_log_entry(self.__MPS_SEARCH_LOG, entry_dict)
+
+    def __register_login(self) -> None:
+        '''
+        Esta función registra los logins que se hagan en la plataforma con el usuario y la fecha
+        '''
+        entry_dict = {
+            'date':datetime.now(),
+            'user':self.__user
+        }
+
+        self.__add_search_log_entry(search_log_path=self.__LOGIN_LOG, entry_dict=entry_dict)
     
     def get_contact_info(self, mps:list) -> pd.DataFrame:
         '''

@@ -33,7 +33,8 @@ def allow_filtering():
 
     display_columns = st.sidebar.multiselect(
         label='Choose columns to display',
-        options=available_show_columns
+        options=available_show_columns,
+        default=['wos', 'quotes']
     )
 
     # Opciones adicionales
@@ -78,6 +79,17 @@ def allow_filtering():
 
     if len(chosen_mps) == 0: return
     if not st.sidebar.button('🔍'): return
+
+    finder.register_mps_search(
+        processes=chosen_processes,
+        state=chosen_state,
+        display_columns=display_columns,
+        show_active=only_active,
+        show_developing=only_developing,
+        search_region=search_region,
+        main_process=main_process,
+        chosen_mps=chosen_mps
+    )
 
     contact_info = finder.get_contact_info(
         mps=chosen_mps
