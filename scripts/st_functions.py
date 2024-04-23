@@ -1,6 +1,7 @@
 import streamlit as st
 import openpyxl as xl
 from scripts.mps_finder import MPsFinder
+from scripts.item_manager import ItemManager
 
 def open_styles(location='templates/style.css'):
     
@@ -55,3 +56,18 @@ def load_finder() -> MPsFinder:
         return finder
     else:
         return st.session_state.finder
+    
+def load_item_manager() -> ItemManager:
+    '''
+    Solo llamar esta función si automations ya está cargada en session state
+    '''
+    automations = st.session_state.automations
+    if 'item_manager' not in st.session_state or st.session_state.item_manager is None:
+        item_manager = ItemManager(
+            mbc=automations.get_metabase_connection()
+        )
+        st.session_state.item_manager = item_manager
+        return item_manager
+    else:
+        return st.session_state.item_manager
+

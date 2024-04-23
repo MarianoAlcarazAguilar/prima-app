@@ -20,5 +20,14 @@ p.paragraph {
     font-size: 11px
 }
 
+p.item {
+    font-family: monospace;
+    color:gray;
+    font-size: 12px;
+    text-align: right;
+    margin: 0;
+    height: 100%;
+}
+
 
 

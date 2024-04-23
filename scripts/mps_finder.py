@@ -1,4 +1,5 @@
 import os
+import warnings
 import pandas as pd
 from datetime import datetime, timezone
 from my_apis.sf_connection import SalesforceConnection
@@ -9,6 +10,8 @@ class MPsFinder:
     Esta clase tiene toda la funcionalidad necesaria para busar MPs con base en productos y estados seleccionados
     '''
     def __init__(self, sfc:SalesforceConnection, mbc:MetabaseConnection, user:str) -> None:
+        warnings.filterwarnings('error') # Para poder cachar warnings como exceptions.
+
         self.__DATABASE_ID = 6
         self.__RM_SEARCH_LOG_TEMPLATE = 'templates/rm_search_log_template.xlsx'
         self.__LOGIN_LOG_TEMPLATE = 'templates/login_log_template.xlsx'

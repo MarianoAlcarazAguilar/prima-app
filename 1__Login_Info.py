@@ -98,6 +98,7 @@ def render_page():
     else:
         st.title('Your credentials have been loaded')
         if st.sidebar.button('Logout'): 
+            st.session_state.item_manager = None
             st.session_state.automations = None
             st.session_state.finder = None
             st.rerun()

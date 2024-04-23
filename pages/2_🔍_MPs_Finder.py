@@ -21,15 +21,9 @@ def allow_filtering():
 
     if len(chosen_processes) == 0: return
 
-    
-    chosen_state = st.sidebar.multiselect(
-        label='Choose state',
-        options=state_options,
-        max_selections=1
-    )
+    chosen_state = st.sidebar.selectbox(label='Choose state', options=state_options, index=None, placeholder='Start typing...')
 
-    if len(chosen_state) == 0: return
-    chosen_state = chosen_state[0]
+    if chosen_state is None: return
 
     display_columns = st.sidebar.multiselect(
         label='Choose columns to display',
