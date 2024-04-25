@@ -1,0 +1,1 @@
+scp -i ~/.ssh/prima-key.pem ~/.keys/*.json ubuntu@18.224.199.4:/home/ubuntu/prima-app/templates/

@@ -10,6 +10,8 @@ def render_page():
     
     # Ahora sí podemos hacer lo que queramos con los items
     # Lo primero que quiero probar es obtener información con base en el rfq id
+    # Necesitamos que el usuario cargue las credenciales y el json de sheets
+    
     show_rfq_info()
 
 def show_rfq_info():
