@@ -41,7 +41,7 @@ class ItemManager:
         )
 
         # TODO: mandar estos datos a salesforce
-        new_entry.to_excel('templates/auxiliar_new_entry.xlsx', index=False)
+        # new_entry.to_excel('templates/auxiliar_new_entry.xlsx', index=False)
 
         self.__sheets.add_multiple_records(new_entry, drop_duplicates=['rfq_id', 'item_id', 'mp_id'])
 
