@@ -10,11 +10,10 @@ class ItemManager:
     '''
     Esta clase permite que los ususarios interactúen con los items de ichigo
     '''
-    def __init__(self, mbc:MetabaseConnection, sf:SheetsFunctions, sfc:SalesforceFunctions) -> None:
+    def __init__(self, mbc:MetabaseConnection, sf:SheetsFunctions, sfc:SalesforceConnection) -> None:
         warnings.filterwarnings('error') # Para poder cachar warnings como exceptions.
 
         self.__DATABASE_ID = 6
-        self.__CATEGORIES_FILE = 'templates/pricing_catalogue.xlsx'
         
         self.__sfc = sfc
         self.__sff = SalesforceFunctions(sfc)
@@ -26,8 +25,34 @@ class ItemManager:
 
     def __load_products(self) -> pd.DataFrame:
         '''
-        TODO: función que cargue los productos existentes en Salesforce de manufactura con columnas id, Name, manufacturing_product_category__c
+        Carga los productos existentes en Salesforce de manufactura con columnas id, Name, manufacturing_product_category__c
         '''
+        products = self.__execute_query_in_sf(
+            query='queries/manufacturing_products.sql',
+            rename_output={'Name':'subcategory', 'manufacturing_product_category__c':'category'}
+        )
+        
+        return products
+    
+    def __execute_query_in_sf(self, query:str, rename_output:dir={}) -> pd.DataFrame:
+        '''
+        Esta función ejecuta un query en salesforce y regresa los resultados en un dataframe.
+        '''
+        original_query = query
+        try:
+            with open(query, 'r') as f:
+                query = f.read()
+        except:
+            query = original_query
+
+        sf_data = (
+            self
+            .__sfc
+            .extract_data(query)
+            .rename(rename_output, axis=1)
+        )
+        
+        return sf_data
 
     def add_new_entry(self, rfq_id:int, categories:pd.DataFrame):
         
@@ -39,9 +64,6 @@ class ItemManager:
             .dropna(subset=['unit_price'])
             .query('unit_price != 0')
         )
-
-        # TODO: mandar estos datos a salesforce
-        # new_entry.to_excel('templates/auxiliar_new_entry.xlsx', index=False)
 
         self.__sheets.add_multiple_records(new_entry, drop_duplicates=['rfq_id', 'item_id', 'mp_id'])
 
@@ -108,11 +130,10 @@ class ItemManager:
         '''
         Esta función regresa los datos de las categorías y subacategorías disponibles para la calsificación
         '''
-        # TODO: utilizar el catálogo de productos que se cargó de sf en vez del excel, pues ese no se estará actualizando
-        data = pd.read_excel(self.__CATEGORIES_FILE)
+        data = self.__manufacturing_products
         
         categories = data.category.dropna().sort_values().unique().tolist()
-        subcategories = data.sub_category.dropna().sort_values().unique().tolist()
+        subcategories = data.subcategory.dropna().sort_values().unique().tolist()
 
         return categories, subcategories
     
