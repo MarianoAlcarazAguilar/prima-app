@@ -43,6 +43,11 @@ def show_rfq_info():
         )
 
     with tab_classify_items:
+        automations = st.session_state.automations
+        if automations.get_user() not in ["mariano.alcaraz@prima.ai", "fernando.villalobos@prima.ai"]:
+            st.info('Sorry, you are not authorized to view this page')
+            return
+        
         changed_data = st.data_editor(
             item_manager.allow_item_classification(rfq_id),
             use_container_width=True,
@@ -68,8 +73,11 @@ def show_rfq_info():
             }
         )
         
-        if not st.button('✔ Done'): return
+        col_button, col_succes = st.columns((.2,.8))
+        if not col_button.button('✔ Done'): return
         
+        item_manager.add_new_entry(rfq_id=rfq_id, categories=changed_data)
+        col_succes.success('Changes have been saved')
 
     
 

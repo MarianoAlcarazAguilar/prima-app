@@ -7,3 +7,5 @@ __pycache__
 ./data/*.csv
 *.parquet
 logs/*.ipynb
+sheets_credentials.json
+sheets_token.json

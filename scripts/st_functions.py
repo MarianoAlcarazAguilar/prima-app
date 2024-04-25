@@ -2,6 +2,7 @@ import streamlit as st
 import openpyxl as xl
 from scripts.mps_finder import MPsFinder
 from scripts.item_manager import ItemManager
+from my_apis.sheets_functions import SheetsFunctions
 
 def open_styles(location='templates/style.css'):
     
@@ -63,8 +64,19 @@ def load_item_manager() -> ItemManager:
     '''
     automations = st.session_state.automations
     if 'item_manager' not in st.session_state or st.session_state.item_manager is None:
+        # Cargamos la funcionalidad de sheets
+        sf = SheetsFunctions(
+            # Esto es lo que se puede cambiar si se necesita
+            spreadsheet_id='1LulC3zt4pxsMXe70W9YtSNJYKY6FvGLWucBAhRBfsH4',
+            credentials='templates/sheets_credentials.json',
+            token='templates/sheets_token.json',
+            sheet_name='Sheet1'
+        )
+
         item_manager = ItemManager(
-            mbc=automations.get_metabase_connection()
+            mbc=automations.get_metabase_connection(),
+            sf=sf,
+            sfc=automations.get_salesforce_connection()
         )
         st.session_state.item_manager = item_manager
         return item_manager

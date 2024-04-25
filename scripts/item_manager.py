@@ -3,20 +3,47 @@ import warnings
 import numpy as np
 import pandas as pd
 from my_apis.mb_connection import MetabaseConnection
+from my_apis.sheets_functions import SheetsFunctions
+from my_apis.sf_connection import SalesforceConnection, SalesforceFunctions
 
 class ItemManager:
     '''
-    Esta función permite que los ususarios interactúen con los items de ichigo
+    Esta clase permite que los ususarios interactúen con los items de ichigo
     '''
-    def __init__(self, mbc:MetabaseConnection) -> None:
+    def __init__(self, mbc:MetabaseConnection, sf:SheetsFunctions, sfc:SalesforceFunctions) -> None:
         warnings.filterwarnings('error') # Para poder cachar warnings como exceptions.
 
         self.__DATABASE_ID = 6
         self.__CATEGORIES_FILE = 'templates/pricing_catalogue.xlsx'
-
+        
+        self.__sfc = sfc
+        self.__sff = SalesforceFunctions(sfc)
         self.__mbc = mbc
         self.__items = self.__load_items()
-        self.categories, self.subcategories = self.__load_categories()
+        self.__manufacturing_products = self.__load_products()
+        self.categories, self.subcategories = self.__load_categories() 
+        self.__sheets = sf
+
+    def __load_products(self) -> pd.DataFrame:
+        '''
+        TODO: función que cargue los productos existentes en Salesforce de manufactura con columnas id, Name, manufacturing_product_category__c
+        '''
+
+    def add_new_entry(self, rfq_id:int, categories:pd.DataFrame):
+        
+        new_entry = (
+            self
+            .__items
+            .query(f'rfq_id == {rfq_id}')
+            .merge(categories.dropna(), on='item_id') # No queremos guardarlos si no tienen tanto categoría como subcategoría
+            .dropna(subset=['unit_price'])
+            .query('unit_price != 0')
+        )
+
+        # TODO: mandar estos datos a salesforce
+        new_entry.to_excel('templates/auxiliar_new_entry.xlsx', index=False)
+
+        self.__sheets.add_multiple_records(new_entry, drop_duplicates=['rfq_id', 'item_id', 'mp_id'])
 
     def get_rfq_info(self, rfq_id:int) -> dict:
         '''
@@ -81,6 +108,7 @@ class ItemManager:
         '''
         Esta función regresa los datos de las categorías y subacategorías disponibles para la calsificación
         '''
+        # TODO: utilizar el catálogo de productos que se cargó de sf en vez del excel, pues ese no se estará actualizando
         data = pd.read_excel(self.__CATEGORIES_FILE)
         
         categories = data.category.dropna().sort_values().unique().tolist()
@@ -109,7 +137,6 @@ class ItemManager:
             .tolist()
         )
         return subcategories
-
     
     def allow_item_classification(self, rfq_id:int) -> pd.DataFrame:
         '''
@@ -134,7 +161,6 @@ class ItemManager:
             .set_index('item_id')
         )
         return answer
-
 
     def get_items(self) -> pd.DataFrame:
         return self.__items
