@@ -1,9 +1,13 @@
 import os
 import warnings
+import numpy as np
 import pandas as pd
+import geopandas as gpd
 from datetime import datetime, timezone
+import matplotlib.pyplot as plt
 from my_apis.sf_connection import SalesforceConnection
 from my_apis.mb_connection import MetabaseConnection
+from matplotlib.colors import LinearSegmentedColormap
 
 class MPsFinder:
     '''
@@ -16,6 +20,7 @@ class MPsFinder:
         self.__RM_SEARCH_LOG_TEMPLATE = 'templates/rm_search_log_template.xlsx'
         self.__LOGIN_LOG_TEMPLATE = 'templates/login_log_template.xlsx'
         self.__MPS_SEARCH_LOG_TEMPLATE = 'templates/mps_search_log_template.xlsx'
+        self.__MEXICO_SHAPEFILE = 'templates/mexico-shapefile.shp'
 
         self.__RM_SEARCH_LOG = 'logs/rm_search_log.parquet'
         self.__MPS_SEARCH_LOG = 'logs/mps_search_log.parquet'
@@ -30,6 +35,7 @@ class MPsFinder:
         self.__mps = self.__load_mps()
         self.__rm_mps = self.__load_rm_mps(interval_days=30)
         self.__rm_mps_db = self.__load_rm_mps_db()
+        self.__mexico_shapefile = gpd.read_parquet(self.__MEXICO_SHAPEFILE)
 
         self.__start_search_log(self.__RM_SEARCH_LOG_TEMPLATE, self.__RM_SEARCH_LOG)
         self.__start_search_log(self.__LOGIN_LOG_TEMPLATE, self.__LOGIN_LOG)
@@ -561,3 +567,102 @@ class MPsFinder:
         )
 
         return mps_contacts
+    
+    def __query_product_for_plot(self, product:str) -> gpd.GeoDataFrame:
+        '''
+        Esta función busca los lugares donde el producto está disponible y regresa el conteo con los nombres de los MPs que hay
+
+        :param product: nombre del producto
+
+        :return: dataframe con columnas state, geometry, total y mps (lista de nombres)
+        '''
+        # Filtramos los datos
+        result = (
+            self
+            .__rm_mps_db
+            .query('product_name == @product')
+            .groupby('state')
+            .agg(
+                total=pd.NamedAgg('state', 'count'),
+                mps=pd.NamedAgg('mp_name', lambda x: np.unique(x))
+            )
+            .reset_index()
+            .pipe(
+                lambda df: self.__mexico_shapefile.merge(df, on='state', how='left')
+            )
+        )
+        return result
+
+    def plot_product_availability(self, product:str, quantiles:bool=False) -> tuple:
+        '''
+        Esta función crea el mapa para mostrar la disponiblidad del producto
+
+        :param product: nombre del producto que se busca
+        :param quantiles: si se quiere mostrar por cuantiles o los números totales
+
+        :return: Figure con el mapa hecho, data to display
+        '''
+        plot_data = self.__query_product_for_plot(product=product)
+
+        fig, ax = plt.subplots(figsize=(6,5))
+        ax.axis('off')
+
+        color_inicio = '#ede0d4'
+        color_fin = '#1b263b'
+        linear_cmap = self.__create_linear_colormap(color_inicio, color_fin)
+
+        if quantiles:
+            try:
+                plot_data.plot(
+                    ax=ax, # especificamos el axis que usará
+                    column='total', # columna que se usará para el color de los distintos estados
+                    legend=True,
+                    cmap=linear_cmap,
+                    missing_kwds={
+                        "color": "#e5e5e5",
+                        "label": "Missing values",
+                    },
+                    scheme='quantiles'
+                )
+            except UserWarning:
+                # Si hay un error por haber intentado usar cuantiles, mandamos la otra forma y ya
+                return self.plot_product_availability(product, False)
+        else:
+            plot_data.plot(
+                ax=ax, # especificamos el axis que usará
+                column='total', # columna que se usará para el color de los distintos estados
+                legend=False,
+                legend_kwds={
+                    "label": "Area", 
+                    "orientation": "horizontal"
+                },
+                cmap=linear_cmap,
+                missing_kwds={
+                    "color": "#e5e5e5",
+                    "label": "Missing values",
+                }
+            )
+        fig.tight_layout()
+        plt.close()
+        return fig, plot_data 
+        
+    def __hex_to_rgb(self, hex_color):
+        """
+        Convert hex color to RGB tuple.
+        """
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+    
+    def __create_linear_colormap(self, hex_color1, hex_color2, name='custom_colormap'):
+        """
+        Create a linear segmented colormap from two hex colors.
+        """
+        rgb1 = self.__hex_to_rgb(hex_color1)
+        rgb2 = self.__hex_to_rgb(hex_color2)
+        
+        cdict = {
+            'red':   [(0.0, rgb1[0], rgb1[0]), (1.0, rgb2[0], rgb2[0])],
+            'green': [(0.0, rgb1[1], rgb1[1]), (1.0, rgb2[1], rgb2[1])],
+            'blue':  [(0.0, rgb1[2], rgb1[2]), (1.0, rgb2[2], rgb2[2])]
+        }
+        return LinearSegmentedColormap(name, cdict)

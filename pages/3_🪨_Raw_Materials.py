@@ -77,7 +77,7 @@ def allow_filtering():
 
     if len(chosen_mps) == 0: return
 
-    if not st.sidebar.button('🔍'): return
+    # if not st.sidebar.button('🔍'): return
 
     # Aquí guardamos la búsqueda
     # Esto nos permitirá mejorar el modelo de matching eventualmente

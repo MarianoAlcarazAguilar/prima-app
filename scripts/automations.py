@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from streamlit import markdown
-from my_apis.excel_functions import DataExtraction
+# from my_apis.excel_functions import DataExtraction
 from my_apis.mb_connection import MetabaseConnection
 from my_apis.sf_connection import SalesforceConnection, SalesforceFunctions
 
@@ -294,10 +294,12 @@ class Automations:
     
     def __get_scores_from_excel(self, file, sheet_name) -> tuple:
         '''
+        Esta función YA NO FUNCIONA
         Esta función saca los datos del excel.
 
         :return: salesforce_id, pd.DataFrame con índice sf_field, value
         '''
+        return None
         # Necesitamos el match entre los nombres y el nombre de la api
         match_kpi_field = {
             'Responsivo en el correo electrónico y Whatsapp (o equivalente)':'ssc_responsiveness__c',
@@ -417,6 +419,7 @@ class Automations:
         if verbose: 
             print('Updating WOS')
             markdown('Updating **WOs**')
+
         errors_wos = (
             differences
             .query('dif_wos')
@@ -562,3 +565,51 @@ class Automations:
         )
 
         return sf_data
+    
+    def update_item_quotations(self, verbose:bool=False, print_every:int=10) -> list:
+        '''
+        Esta función descarga las cotizaciones de los items que están cargadas en Ichigo y las mete a Salesforce
+        con los indicadores necesarios.
+
+        :return: lista con los errores encontrados
+        '''
+        mb_query = 'queries/quoted_items.sql'
+        sf_query = 'select Name from quoted_items__c'
+
+        existing_items = (
+            self
+            .__execute_query_in_sf(sf_query, is_path=False)
+            .rename({'Name':'name'}, axis=1)
+            .astype(int)
+        )
+        all_items = self.__execute_query_in_mb(
+            mb_query, 
+            is_path=True, 
+            id_col='name'
+        )
+
+        upload_data = (
+            all_items
+            .merge(existing_items, on='name', how='outer', indicator=True)
+            .query('_merge == "left_only"')
+            .drop(['_merge'], axis=1)
+            .replace({np.NaN:None})
+            .replace({'target_price__c':0.0}, None)
+            .assign(item_name__c=lambda x: x.item_name__c.apply(lambda df: df[:255]))
+        )
+
+        if verbose:
+            markdown(f'Changing {upload_data.shape[0]} values')
+
+        errors = self.__sff.add_related_records(
+            df=upload_data,
+            add_type='quoted_items__c',
+            related_index_name='mp_account__c',
+            verbose=verbose, 
+            print_every=print_every
+        )
+
+        return errors
+
+
+

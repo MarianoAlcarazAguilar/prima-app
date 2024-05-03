@@ -1,5 +1,5 @@
 import streamlit as st
-import openpyxl as xl
+# import openpyxl as xl
 from scripts.mps_finder import MPsFinder
 from scripts.item_manager import ItemManager
 from my_apis.sheets_functions import SheetsFunctions
@@ -30,6 +30,7 @@ def get_sheet_names(file):
     :param file: bytes o path.
     :return: lista con los nombres
     '''
+    return None
     return xl.load_workbook(file).sheetnames
 
 def user_is_verified() -> bool:

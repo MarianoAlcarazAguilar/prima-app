@@ -29,5 +29,21 @@ p.item {
     height: 100%;
 }
 
+div[data-testid="stImage"] {
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    text-align:center;
+    height:auto;
+    width:100%
+}
+div[data-testid="stImage"] img {
+    width:100%;
+    padding-left:15%;
+    padding-right:15%;
+}
 
-
+/* Aquí están las subpáginas, porque de otra forma no las puedo acomodar */
+a[href$="Geo_Finder"] {
+    padding-left: 12%;
+}

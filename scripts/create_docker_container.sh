@@ -20,7 +20,7 @@ else
     # Crear el contenedor si no existe
     docker run -d \
     --name $CONTAINER_NAME \
-    -p 80:8501 \
+    -p 8501:8501 \
     $IMAGE_NAME
     echo "El contenedor $CONTAINER_NAME ha sido creado."
 fi

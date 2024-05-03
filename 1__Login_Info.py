@@ -84,6 +84,7 @@ def load_default_credentials():
 
 def render_page():
     open_styles()
+    
     full_login = st.sidebar.toggle('Full login')
     st.session_state.full_login = full_login
 
