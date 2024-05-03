@@ -38,11 +38,22 @@ def allow_geolocation():
             .drop(['geometry'], axis=1)
             .dropna(subset=['total'])
             .sort_values(['total', 'state'], ascending=[0,1])
+            .drop_duplicates(subset=['state'])
         )
         st.dataframe(
             data=display_data,
             hide_index=True,
-            use_container_width=True
+            use_container_width=True,
+            column_config={
+                'state':st.column_config.TextColumn(
+                    label='Estado',
+                    width='small'
+                ),
+                'total':st.column_config.NumberColumn(
+                    label='Total',
+                    width='small'
+                )
+            }
         )
         
 def update_chosen_product(product:str):
