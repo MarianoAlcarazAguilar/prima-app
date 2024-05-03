@@ -162,6 +162,5 @@ cython_debug/
 
 # Adicionales
 mps-finder/logs/*.parquet
-mps-finder/scripts/auxiliar
-mps-finder/scripts/data
+scripts/untracked
 *.pdf
