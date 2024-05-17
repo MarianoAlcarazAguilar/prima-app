@@ -2,6 +2,7 @@ import json
 from scripts.st_functions import *
 import streamlit as st
 from scripts.automations import Automations
+from st_pages import Page, show_pages
 
 def load_full_credentials():
     '''
@@ -83,8 +84,13 @@ def load_default_credentials():
         st.rerun()
 
 def render_page():
+    # ESTA PÁGINA YA NO ESTÁ EN FUNCIONAMIENTO
     open_styles()
-    
+    show_pages([Page('1__Login_Info.py')])
+    st.title('This page is no longer available')
+    st.markdown(f'To continue to the new site, please refer to https://spikes.prima.ai')
+    return
+
     full_login = st.sidebar.toggle('Full login')
     st.session_state.full_login = full_login
 
